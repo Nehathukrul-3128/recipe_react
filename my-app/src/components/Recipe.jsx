@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 
 export default function Recipe()
@@ -8,6 +8,7 @@ export default function Recipe()
     const [ingredients,setIngredients]=useState("");
     const [instructions,setInstructions]=useState("");
     const [recipes,setRecipes]=useState([]);
+    const [editingId,setEditingId]=useState(null);
 
     //Save recipes to localstorage
     const saveRecipes=(updatedRecipes)=>{
@@ -18,6 +19,11 @@ export default function Recipe()
 
     //Load Recipes
 
+    useEffect(()=>{
+        const storedRecipes=JSON.parse(localStorage.getItem("recipes"))||[];
+        setRecipes(storedRecipes)
+    },[])
+
     //Add recipes
     const handleSubmit=(e)=>{
         e.preventDefault();
@@ -25,6 +31,14 @@ export default function Recipe()
         {
             alert("Please fill all fields");
             return;
+        }
+        if(editingId)
+        {
+            const updatedRecipes=recipes.map((r)=>
+            r.id===editingId?{...r,name:recipename,ingredients,instructions} :r
+        )
+        saveRecipes(updatedRecipes)
+        setEditingId(null);
         }
         else
         {
@@ -40,6 +54,22 @@ export default function Recipe()
         setIngredients("");
         setInstructions("");
     }
+
+    //Deleted recipes
+    const handleDelete=(id)=>{
+        const updatedRecipes=recipes.filter((r)=>r.id!==id)
+        saveRecipes(updatedRecipes);
+    }
+
+    //Edit Recipes
+
+    const handleEdit=(r)=>{
+        setRecipeName(r.name);
+        setIngredients(r.ingredients);
+        setInstructions(r.instructions);
+        setEditingId(r.id);
+    }
+
     return(
         <>
      
@@ -61,9 +91,26 @@ export default function Recipe()
                 <label>Instruction:</label><br />
                 <input type="text" style={{width:"100%",padding:"5px"}} value={instructions} onChange={(e)=>setInstructions(e.target.value)} />
             </div>
-            <button style={{padding:"5px 10px"}} type="submit">Add Recipe</button>
+            <button style={{padding:"5px 10px"}} type="submit">
+                {editingId?"update Recipes":"Add Recipe"}
+            </button>
             </form>
+        </div>
 
+        <div style={{maxWidth:"600px",margin:"20px auto",border:"1px solid #ccc",padding:"30px"}}>
+            <h3>All recipes</h3>
+            {recipes.length===0 && <p>No recipes added yet</p>}
+            {recipes.map((r)=>(
+                <div key={r.id} style={{border:"1px solid #ccc",padding:"10px",marginBottom:"10px"}}>
+                    <h4>Recipe Name: {r.name}</h4>
+                    <p><strong>Ingredients</strong></p>
+                    <ul>{r.ingredients}</ul>
+                    <p><strong>Instructions:{r.instructions}</strong></p>
+                    <button style={{padding:"3px 8px",marginRight:"5px"}} onClick={()=>handleEdit(r)}>Edit</button>
+                     <button style={{padding:"3px 8px"}} onClick={()=>handleDelete(r.id)}>Delete</button>
+
+                </div>
+            ))}
         </div>
         </>
     )
